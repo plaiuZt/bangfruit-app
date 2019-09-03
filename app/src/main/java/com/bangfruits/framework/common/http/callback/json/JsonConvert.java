@@ -8,6 +8,7 @@ import com.bangfruits.framework.common.model.ResultJson;
 import com.bangfruits.framework.common.model.BaseJson;
 import com.bangfruits.framework.common.model.SimpleBaseJson;
 import com.bangfruits.framework.common.model.SimpleCodeJson;
+import com.bangfruits.framework.common.utils.ToastUtils;
 import com.google.gson.stream.JsonReader;
 import com.lzy.okgo.convert.Converter;
 
@@ -52,12 +53,7 @@ public class JsonConvert<T> implements Converter<T> {
     public T convertResponse(Response response) throws Throwable {
 
         // 不同的业务，这里的代码逻辑都不一样，要按需修改
-
         // 如果你对这里的代码原理不清楚，可以看这里的详细原理说明: https://github.com/jeasonlzy/okhttp-OkGo/wiki/JsonCallback
-        // 如果你对这里的代码原理不清楚，可以看这里的详细原理说明: https://github.com/jeasonlzy/okhttp-OkGo/wiki/JsonCallback
-        // 如果你对这里的代码原理不清楚，可以看这里的详细原理说明: https://github.com/jeasonlzy/okhttp-OkGo/wiki/JsonCallback
-
-
         /*
         * 由于项目需要，App端请求网络必需添加一个Token验证，所以登录成功之后会在OkGo全局添加一个Token的param
         * 每次请求网络后台都会验证这个token是否过期，如果过期，则返回{"code":102,"msg":"token过期"}
@@ -73,7 +69,9 @@ public class JsonConvert<T> implements Converter<T> {
                 return parseClass(response, clazz);
             }
         }
-
+        if(type == Void.class){
+            ToastUtils.normal(type.toString());
+        }
         if (type instanceof ParameterizedType) {
             return parseParameterizedType(response, (ParameterizedType) type);
         } else if (type instanceof Class) {
@@ -197,7 +195,7 @@ public class JsonConvert<T> implements Converter<T> {
             // code为0: 表示成功
             if (code == 0) {
                 //noinspection unchecked
-                return (T) simpleCodeJson.toBaseCodeJson();
+                return (T) simpleCodeJson.toResultJson();
             }
         } else {
             // 泛型格式如下： new JsonCallback<ResultJson<内层JavaBean>>(this)

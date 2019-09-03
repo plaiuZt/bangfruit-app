@@ -3,12 +3,16 @@ package com.bangfruits.framework.common.http.callback.json;
 import android.app.Activity;
 import android.content.Intent;
 
+import com.bangfruits.framework.common.model.ResultJson;
+import com.bangfruits.framework.common.model.SimpleCodeJson;
 import com.bangfruits.framework.manager.ActivityLifecycleManager;
 import com.bangfruits.framework.common.constant.SPConstants;
 import com.bangfruits.framework.common.http.exception.TokenException;
 import com.bangfruits.framework.common.utils.PreferenceUtils;
 import com.bangfruits.framework.common.utils.ToastUtils;
 import com.bangfruits.framework.modules.welcome.activity.WelcomeActivity;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 import com.lzy.okgo.callback.AbsCallback;
 import com.lzy.okgo.exception.HttpException;
 import com.lzy.okgo.exception.StorageException;
@@ -20,6 +24,8 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
+import okhttp3.ResponseBody;
+
 /**
  * Created by LY on 2019/4/2.
  */
@@ -29,14 +35,6 @@ public abstract class JsonCallback<T> extends AbsCallback<T> {
     private Class<T> clazz;
 
     public JsonCallback() {
-    }
-
-    public JsonCallback(Type type) {
-        this.type = type;
-    }
-
-    public JsonCallback(Class<T> clazz) {
-        this.clazz = clazz;
     }
 
     /**
@@ -50,22 +48,52 @@ public abstract class JsonCallback<T> extends AbsCallback<T> {
         // 不同的业务，这里的代码逻辑都不一样，如果你不修改，那么基本不可用
 
         //详细自定义的原理和文档，看这里： https://github.com/jeasonlzy/okhttp-OkGo/wiki/JsonCallback
+        Type genType = getClass().getGenericSuperclass();
+        Type[] params = ((ParameterizedType) genType).getActualTypeArguments();
+        //这里得到ResultJson<T>类型
+        Type type = params[0];
 
-        if (type == null) {
-            if (clazz == null) {
-                Type genType = getClass().getGenericSuperclass();
-                type = ((ParameterizedType) genType).getActualTypeArguments()[0];
-            } else {
-                JsonConvert<T> convert = new JsonConvert<>(clazz);
-                return convert.convertResponse(response);
+        if(!(type instanceof ParameterizedType)) throw new IllegalStateException("没有填写泛型参数");
+        //这里得到ResultJson
+        Type rawType = ((ParameterizedType) type).getRawType();
+        //这里得到TModel
+        Type typeArgument = ((ParameterizedType) type).getActualTypeArguments()[0];
+
+        ResponseBody body = response.body();
+        if(body == null) return null;
+        Gson gson = new Gson();
+        JsonReader jsonReader = new JsonReader(body.charStream());
+        if(rawType != ResultJson.class){
+            T data = gson.fromJson(jsonReader,type);
+            response.close();
+            return data;
+        }else {
+            if(typeArgument == Void.class){
+                //无数据类型 new DialogCallback<ResultJson<Void>>() 这种形式传递的泛型
+                SimpleCodeJson simpleCodeJson = gson.fromJson(jsonReader,SimpleCodeJson.class);
+                response.close();
+                return (T) simpleCodeJson.toResultJson();
+            }else {
+                ResultJson resultJson = gson.fromJson(jsonReader,type);
+                response.close();
+                int code = resultJson.getCode();
+
+                if(code == 0){
+                    return (T) resultJson;
+                }else if(code == 104) {
+                    throw new IllegalStateException("用户授权信息无效");
+                }else if(code == 105){
+                    throw new IllegalStateException("用户授权信息已过期");
+                }else if(code == 106){
+                    throw new IllegalStateException("用户账户被禁用");
+                }else if(code == 300){
+                    throw new IllegalStateException("其他异常信息");
+                }else {
+                    throw new IllegalStateException("错误代码："+code+"，错误信息："+resultJson.getMsg());
+                }
             }
         }
-
-        JsonConvert<T> convert = new JsonConvert<>(type);
-        return convert.convertResponse(response);
     }
-
-
     @Override
     public void onError(Response<T> response) {
         super.onError(response);
@@ -75,7 +103,6 @@ public abstract class JsonCallback<T> extends AbsCallback<T> {
         /*if (exception != null) {
             exception.printStackTrace();
         }*/
-
         if (exception instanceof UnknownHostException || exception instanceof ConnectException) {
             ToastUtils.error("网络连接失败，请连接网络！");
         } else if (exception instanceof SocketTimeoutException) {
@@ -89,6 +116,7 @@ public abstract class JsonCallback<T> extends AbsCallback<T> {
             skipLoginActivityAndFinish(exception);
         } else if (exception instanceof IllegalStateException) {
             ToastUtils.error(exception.getMessage());
+            skipLoginActivityAndFinish(exception);
         }
     }
 

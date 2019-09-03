@@ -9,7 +9,8 @@ import com.bangfruits.framework.MainApplication;
 public interface Constants {
 
     //String SERVICE_IP = "http://192.168.0.106:8009/api";
-    String SERVICE_IP = "http://192.168.0.104:8001/api";
+    //String SERVICE_IP = "http://192.168.0.104:8001/api";
+    String SERVICE_IP = "https://www.easy-mock.com/mock/5d6cd381fca9c542568a36a3/api";
     String APP_TOKEN = "appToken";
 
     // admin测试数据使用

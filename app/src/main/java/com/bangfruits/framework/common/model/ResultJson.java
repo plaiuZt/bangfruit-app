@@ -53,4 +53,13 @@ public class ResultJson<T> implements Serializable {
     public void setUserId(int userId) {
         this.userId = userId;
     }
+
+    @Override
+    public String toString() {
+        return "ResultJosn{\n" +//
+                "\tcode=" + code + "\n" +//
+                "\tmsg='" + msg + "\'\n" +//
+                "\tdata=" + result + "\n" +//
+                '}';
+    }
 }

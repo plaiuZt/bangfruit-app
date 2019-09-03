@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import com.bangfruits.framework.R;
 import com.bangfruits.framework.common.model.ResultJson;
+import com.bangfruits.framework.common.utils.ToastUtils;
 import com.bangfruits.framework.manager.ActivityLifecycleManager;
 import com.bangfruits.framework.common.constant.Constants;
 import com.bangfruits.framework.common.constant.SPConstants;
@@ -174,14 +175,13 @@ public class WelcomeActivity extends AppCompatActivity {
                 .execute(new JsonCallback<ResultJson<Void>>() {
                     @Override
                     public void onSuccess(Response<ResultJson<Void>> response) {
-
+                        ToastUtils.normal("调用成功");
                         // 判断是否开启跳转到测试界面
                         if (Constants.SKIP_TO_TEST_ACTIVITY) {
                             skipToTestActivity();
                         } else {
                             skipToMainActivity();
                         }
-
                     }
 
                     @Override

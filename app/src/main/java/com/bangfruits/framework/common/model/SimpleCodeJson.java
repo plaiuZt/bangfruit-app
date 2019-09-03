@@ -13,7 +13,7 @@ public class SimpleCodeJson {
     private String msg;
 
 
-    public ResultJson toBaseCodeJson() {
+    public ResultJson toResultJson() {
         ResultJson baseCodeJson = new ResultJson();
         baseCodeJson.setCode(code);
         baseCodeJson.setMsg(msg);
